@@ -1,0 +1,71 @@
+# Network Policy to restrict pod communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: 
+  name: microservices-policy
+spec:
+  podSelector:
+    matchLabels: 
+      app: account-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+      matchLabels:
+        app: auth-service
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+      matchLabels:
+        app: transaction-service
+    ports:
+    - protocol: TCP
+      port: 8081
+
+---
+
+# Resource Quotas
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: compute-quota
+spec: 
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+
+---
+
+# Pod Security Policy
+apiVersion: pod-security.kubernetes.io/v1
+kind: Pod
+metadata: 
+  name: security-context
+spec: 
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
+  automountServiceAccountToken: false
+
+---
+
+# RBAC Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: 
+  name: service-role
+rules: 
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list"]

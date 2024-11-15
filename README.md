@@ -1,11 +1,11 @@
-Overview
+**Overview**
 A Global Bank is facing critical challenges with their legacy core banking systems:
 · Increased transaction loads during peak hours causing system delays
 · 4-hour Disaster Recovery time, impacting business continuity
 · High maintenance costs of on-premises infrastructure and data centres
 · Difficulty scaling operations to new geographical regions
 · Complex compliance requirements across multiple jurisdictions
-Objectives
+**Objectives**
 I will be outlining a detailed solution to migrate this core banking system to AWS Cloud. By doing this, I hope to achieve the following outcomes:
 · Reduce disaster recovery time to less than 15 minutes
 · Achieve 99.999% availability for critical services

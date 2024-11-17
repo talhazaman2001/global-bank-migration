@@ -51,3 +51,8 @@ variable "macie_findings_arn" {
     type = string
     description = "Lambda Function ARN for Macie Findings"
 }
+
+variable "config_rules_arn" {
+    type = string
+    description = "Lambda Function ARN for Config Rule Changes"
+}

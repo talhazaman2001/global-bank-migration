@@ -289,6 +289,19 @@ resource "aws_config_delivery_channel" "main" {
     s3_bucket_name = var.audit_reports_bucket_name
 }
 
+# Config Rule Lambda SG Change
+resource "aws_config_rule" "sg_changes" {
+    name = "sg-changes"
+
+    source {
+        owner = "AWS"
+        source_identifier = "INCOMING_SSH_DISABLED"
+    }
+
+    scope {
+    compliance_resource_types = ["AWS::EC2::SecurityGroup"]
+    }
+}
 
 # Macie Configuration
 resource "aws_macie2_account" "global_bank" {

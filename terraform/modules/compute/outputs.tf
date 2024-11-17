@@ -13,3 +13,7 @@ output "macie_findings_arn" {
 output "fraud_detection_invoke_arn" {
     value = aws_lambda_function.fraud_detection.invoke_arn
 }
+
+output "config_rules_arn" {
+    value = aws_lambda_function.config_rules.arn
+}

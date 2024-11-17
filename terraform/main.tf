@@ -107,6 +107,7 @@ module "monitoring" {
     network_firewall_arn = module.security.network_firewall_arn
     dynamodb_table_name = module.database.dynamodb_table_name
     macie_findings_arn = module.compute.macie_findings_arn
+    config_rules_arn = module.compute.config_rules_arn
 }
 
 # Security Module

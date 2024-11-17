@@ -56,15 +56,6 @@ resource "aws_lambda_function" "macie_findings" {
     }
 }
 
-# Lambda Permission for EventBridge
-resource "aws_lambda_permission" "allow_eventbridge" {
-    statement_id  = "AllowEventBridgeInvoke"
-    action = "lambda:InvokeFunction"
-    function_name = aws_lambda_function.macie_findings.function_name
-    principal = "events.amazonaws.com"
-    source_arn = var.cloudwatch_event_rule_macie_findings_arn
-}
-
 # Lambda Function for Config Rule Changes
 resource "aws_lambda_function" "config_rules" {
     filename = "${path.module}/../../../lambda/config-rule-changes/config-rule-changes.zip" 
@@ -90,3 +81,18 @@ resource "aws_lambda_function" "config_rules" {
         security_group_ids = [aws_security_group.lambda.id]
     }
 }
+
+# Lambda Permission to allow EventBridge invocation
+resource "aws_lambda_permission" "allow_eventbridge" {
+    for_each = {
+        config = aws_cloudwatch_event_rule.sg_changes.arn
+        macie  = aws_cloudwatch_event_rule.macie_findings.arn
+    }
+
+    statement_id  = "AllowEventBridgeInvoke${each.key}"
+    action        = "lambda:InvokeFunction"
+    function_name = each.key == "config" ? aws_lambda_function.config_rules.function_name : aws_lambda_function.macie_findings.function_name
+    principal     = "events.amazonaws.com"
+    source_arn    = each.value
+}
+

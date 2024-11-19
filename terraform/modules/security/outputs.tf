@@ -69,3 +69,6 @@ output "alb_s3_bucket_policy" {
     value = aws_s3_bucket_policy.alb_logs_policy.policy
 }
 
+output "eks_service_account_role_arn" {
+    value = aws_iam_role.eks_service_account.arn
+}

@@ -3,13 +3,14 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: 
   name: microservices-policy
+  namespace: banking
 spec:
   podSelector:
     matchLabels: 
       app: account-service
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
   - from:
     - podSelector:
@@ -20,12 +21,10 @@ spec:
       port: 8080
   egress:
   - to:
-    - podSelector:
-      matchLabels:
-        app: transaction-service
-    ports:
-    - protocol: TCP
-      port: 8081
+    - ipBlock:
+        cidr: "10.2.1.0/24" # Data VPC AZ1 
+    - ipBlock:
+        cidr: "10.2.2.0/24" # Data VPC AZ2
 
 ---
 
@@ -34,12 +33,13 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: compute-quota
+  namespace: banking
 spec: 
   hard:
-    requests.cpu: "4"
-    requests.memory: 8Gi
-    limits.cpu: "8"
-    limits.memory: 16Gi
+    requests.cpu: "16"
+    requests.memory: 64Gi
+    limits.cpu: "32"
+    limits.memory: 128Gi
 
 ---
 
@@ -48,6 +48,7 @@ apiVersion: pod-security.kubernetes.io/v1
 kind: Pod
 metadata: 
   name: security-context
+  namespace: banking
 spec: 
   securityContext:
     runAsNonRoot: true
@@ -62,10 +63,26 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata: 
   name: service-role
+  namespace: banking
 rules: 
 - apiGroups: [""]
-  resources: ["pods", "services"]
-  verbs: ["get", "list"]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "list"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: 
+  name: service-rolebinding
+  namespace: banking 
+subjects: 
+- kind: ServiceAccount 
+  name: banking-service-account
+  namespace: banking 
+roleRef: 
+  kind: Role 
+  name: service-role 
+  apiGroup: rbac.authorization.k8s.io/v1

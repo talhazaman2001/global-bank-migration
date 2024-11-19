@@ -98,3 +98,13 @@ variable "audit_reports_bucket_arn" {
 variable "alb_s3_bucket_policy" {
     type = string
 }
+
+variable "cluster_name" {
+    type = string
+    description = "EKS Cluster Name"
+}
+
+variable "eks_service_account_role_arn" {
+    type = string
+    description = "IAM Role for EKS Service Account"
+}

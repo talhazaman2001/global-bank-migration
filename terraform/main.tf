@@ -76,6 +76,8 @@ module "compute" {
     audit_reports_bucket_arn = module.storage.audit_reports_bucket_arn
     vpc_flow_logs_bucket_arn = module.storage.vpc_flow_logs_bucket_arn
     alb_s3_bucket_policy = module.security.alb_s3_bucket_policy
+    cluster_name = module.eks.cluster_name 
+    eks_service_account_role_arn = module.security.eks_service_account_role_arn
 }
 
 # Database Module

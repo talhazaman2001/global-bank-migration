@@ -436,6 +436,71 @@ resource "aws_iam_policy" "aurora_eks" {
     })
 }
 
+resource "aws_iam_policy" "alb_controller" {
+    name = "ALBControllerPolicy"
+    
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "elasticloadbalancing:CreateLoadBalancer",
+                    "elasticloadbalancing:DeleteLoadBalancer",
+                    "elasticloadbalancing:DescribeLoadBalancers",
+                    "elasticloadbalancing:CreateTargetGroup",
+                    "elasticloadbalancing:DeleteTargetGroup",
+                    "elasticloadbalancing:DescribeTargetGroups",
+                    "elasticloadbalancing:RegisterTargets",
+                    "elasticloadbalancing:DeregisterTargets",
+                    "elasticloadbalancing:CreateListener",
+                    "elasticloadbalancing:DeleteListener",
+                    "elasticloadbalancing:DescribeListeners",
+                    "elasticloadbalancing:ModifyListener"
+                    ]
+                    Resource = [
+                        "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:loadbalancer/app/*",
+                        "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:targetgroup/*",
+                        "arn:aws:elasticloadbalancing:${var.region}:${data.aws_caller_identity.current.account_id}:listener/*"
+                    ]
+            },
+            {
+                Effect   = "Allow"
+                Action   = [
+                    "ec2:DescribeInstances",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:AuthorizeSecurityGroupIngress",
+                    "ec2:RevokeSecurityGroupIngress"
+                ]
+                Resource = "*"
+            },
+            {
+                Effect   = "Allow"
+                Action   = [
+                    "acm:DescribeCertificate",
+                    "acm:ListCertificates",
+                    "acm:GetCertificate"
+                ]
+                Resource = [
+                "arn:aws:acm:${var.region}:${data.aws_caller_identity.current.account_id}:certificate/*"
+                ]
+            },
+            {
+                Effect   = "Allow"
+                Action   = [
+                "wafv2:GetWebACL",
+                "wafv2:AssociateWebACL",
+                "wafv2:DisassociateWebACL"
+                ]
+                Resource = [
+                "arn:aws:wafv2:${var.region}:${data.aws_caller_identity.current.account_id}:regional/webacl/*"
+                ]
+                Resource = "*"
+            }
+        ]
+    })
+}
+
 # Attach Policies to EKS Service Role
 resource "aws_iam_role_policy_attachment" "dynamodb" {
     role = aws_iam_role.eks_service_account.name

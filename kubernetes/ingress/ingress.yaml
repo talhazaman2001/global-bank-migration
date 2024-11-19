@@ -24,7 +24,7 @@ spec:
                 port:
                   number: 80
           - path: /transaction
-            pathType: Prefic
+            pathType: Prefix
             backend:
               service:
                 name: transaction-servoce

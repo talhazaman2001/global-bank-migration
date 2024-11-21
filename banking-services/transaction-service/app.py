@@ -3,6 +3,9 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone
 import uuid
+from prometheus_client import make_asgi_app
+from common.middleware import MetricsMiddleware
+from prometheus_client import Counter, Histogram
 
 class TransactionBase(BaseModel):
     from_account: str
@@ -16,6 +19,11 @@ class TransactionResponse(TransactionBase):
     timestamp: datetime
 
 app = FastAPI()
+metrics_middleware = MetricsMiddleware(app_name="transaction-service")
+app.add_middleware(metrics_middleware.__class__, app_name="transaxtion-service")
+
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 @app.post("/transactions/", response_model=TransactionResponse)
 async def create_transaction(txn: TransactionBase):

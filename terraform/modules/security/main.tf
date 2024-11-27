@@ -268,6 +268,11 @@ resource "aws_securityhub_standards_subscription" "cis" {
 }
 
 # AWS Config
+resource "aws_config_delivery_channel" "main" {
+    name = "global-banking-delivery-channel"
+    s3_bucket_name = var.audit_reports_bucket_name
+}
+
 resource "aws_config_configuration_recorder" "main" {
     name = "global-banking-config-recorder"
     role_arn = aws_iam_role.config.arn
@@ -284,13 +289,9 @@ resource "aws_config_configuration_recorder_status" "main" {
     depends_on = [aws_config_configuration_recorder.main, aws_config_delivery_channel.main]
 }
 
-resource "aws_config_delivery_channel" "main" {
-    name = "global-banking-delivery-channel"
-    s3_bucket_name = var.audit_reports_bucket_name
-}
 
 # Config Rule Lambda SG Change
-resource "aws_config_rule" "sg_changes" {
+resource "aws_config_config_rule" "sg_changes" {
     name = "sg-changes"
 
     source {
@@ -301,6 +302,10 @@ resource "aws_config_rule" "sg_changes" {
     scope {
     compliance_resource_types = ["AWS::EC2::SecurityGroup"]
     }
+
+    depends_on = [
+        aws_config_configuration_recorder_status.main
+    ]
 }
 
 # Macie Configuration

@@ -78,6 +78,7 @@ module "compute" {
     alb_s3_bucket_policy = module.security.alb_s3_bucket_policy
     cluster_name = module.eks.cluster_name 
     eks_service_account_role_arn = module.security.eks_service_account_role_arn
+    cloudwatch_event_rule_config_changes_arn = module.monitoring.cloudwatch_event_rule_config_changes_arn
 }
 
 # Database Module

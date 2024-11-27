@@ -63,11 +63,6 @@ resource "aws_route_table" "public" {
         transit_gateway_id = var.transit_gateway_id
     }
 
-    route {
-        cidr_block = "172.16.0.0/12" # On-Prem CIDR
-        transit_gateway_id = var.transit_gateway_id
-    }
-
     tags = merge(local.common_tags, {
         Name = "${var.vpc_name}-public-${each.key}"
     })

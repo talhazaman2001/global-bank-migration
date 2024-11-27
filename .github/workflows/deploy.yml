@@ -1,0 +1,112 @@
+name: Banking Services CI/CD
+
+on: 
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-west-2
+  ACCOUNT_SERVICE_ECR: 463470963000.dkr.ecr.eu-west-2.amazonaws.com/account-service
+  AUTH_SERVICE_ECR: 463470963000.dkr.ecr.eu-west-2.amazonaws.com/auth-service
+  TRANSACTION_SERVICE_ECR: 463470963000.dkr.ecr.eu-west-2.amazonaws.com/transaction-service
+  EKS_CLUSTER_NAME: banking-cluster
+  ENVIRONMENT: production
+  KUBECTL_VERSION: "v1.31.2"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+    matrix:
+      service: [account-service, auth-service, transaction-service]
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+        aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+        aws-region: ${{env.AWS_REGION}}
+
+    - name: Login to Amazon ECR
+      run: |
+        cd ${{matrix.service}}
+        docker build -t ${{matrix.service}}: test .
+
+    - name: Build and Push Docker image
+      env: 
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd ${{ matrix.service }}
+        ECR_REPO="${{ env[matrix.service == 'account-service' && 'ACCOUNT_SERVICE_ECR' || matrix.service == 'auth-service' && 'AUTH_SERVICE_ECR' || 'TRANSACTION_SERVICE_ECR'] }}"
+        docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+
+  deploy:
+    needs: build-and-test 
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3 
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          aws-region: eu-west-2
+
+      - name: Install kubectl 
+        run: |
+          curl - LO https://dl.k8s.io/release/${{env.KUBECTL_VERSION}}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{env.EKS_CLUSTER_NAME}} --region ${{env.AWS_REGION}}
+
+      - name: Deploy Blue-Green for each service 
+        env: 
+          IMAGE_TAG: ${{github.sha}}
+        run: |
+          for service in account-service auth-service transaction-service; do
+            # Create green deployment
+            cat kubernetes/base/deployments/${service}.yml | \
+            sed "s/latest/${IMAGE_TAG}/g"
+            sed "s/${service}/${service}-green/g"
+            kubectl apply -f -
+
+            # Wait for green deployment to be ready
+            kubectl rollout status deployment/${service}-green -n banking --timeout=300s
+
+            # Update service to point to green deployment 
+            kubectl patch service ${service} -n banking -p \
+              "{\"spec\":{\"selector\":{\"app\":\"${service}-green\"}}}"
+
+            # Wait for traffic switch
+            sleep 30
+
+            # Verify green deployment 
+            if kubectl get pods -l app=${service}-green -n banking | grep -q Running then; then
+              # Delete old blue deployment
+              kubectl delete deployment ${service}-blue -n banking --ignore-not-found
+              # Rename green to blue 
+              kubectl patch deploymeny ${service}-green -n banking -p \
+                "{\"metadata\":{\"name\":\"${service}\"},\"spec\":{\"template\":{\"metadata\"{\"labels\":{\"app\":\"${service}\"}}}}}"
+            
+            else
+              # Rollback if green deployment fails
+              kubectl patch service ${service} -n banking -p \
+                "{\"spec\":{\"selector\":{\"app\":\"${service}\"}}}"
+              kubectl delete deployment ${service}-green -n banking
+              exit 1
+            fi 
+          done 
+
+      - name: Verify monitoring
+        run: |
+          kubectl rollout status deployment/prometheus -n monitoring 
+          kubectl rollout status deployment/grafana -n monitoring 

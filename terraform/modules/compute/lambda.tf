@@ -85,8 +85,8 @@ resource "aws_lambda_function" "config_rules" {
 # Lambda Permission to allow EventBridge invocation
 resource "aws_lambda_permission" "allow_eventbridge" {
     for_each = {
-        config = aws_cloudwatch_event_rule.sg_changes.arn
-        macie  = aws_cloudwatch_event_rule.macie_findings.arn
+        config = var.cloudwatch_event_rule_config_changes_arn
+        macie  = var.cloudwatch_event_rule_macie_findings_arn
     }
 
     statement_id  = "AllowEventBridgeInvoke${each.key}"

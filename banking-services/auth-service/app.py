@@ -13,8 +13,9 @@ class TokenResponse(BaseModel):
     expires_at: datetime
 
 app = FastAPI()
-metrics_middleware = MetricsMiddleware(app_name="auth-service")
-app.add_middleware(metrics_middleware.__class__, app_name="auth-service")
+metrics_middleware = MetricsMiddleware("auth-service")
+app.middleware("http")(metrics_middleware.__call__)
+
 
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)

@@ -108,3 +108,7 @@ variable "eks_service_account_role_arn" {
     type = string
     description = "IAM Role for EKS Service Account"
 }
+
+variable "cloudwatch_event_rule_config_changes_arn" {
+    type = string
+}

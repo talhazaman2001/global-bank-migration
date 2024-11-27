@@ -19,32 +19,31 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
-    matrix:
-      service: [account-service, auth-service, transaction-service]
-  steps:
-    - uses: actions/checkout@v3
+      matrix:
+        service: [account-service, auth-service, transaction-service]
+    steps:
+      - uses: actions/checkout@v3
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-        aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-        aws-region: ${{env.AWS_REGION}}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          aws-region: eu-west-2
 
-    - name: Login to Amazon ECR
-      run: |
-        cd ${{matrix.service}}
-        docker build -t ${{matrix.service}}: test .
+      - name: Login to Amazon ECR
+        run: |
+          cd ${{matrix.service}}
+          docker build -t ${{matrix.service}}: test .
 
-    - name: Build and Push Docker image
-      env: 
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        cd ${{ matrix.service }}
-        ECR_REPO="${{ env[matrix.service == 'account-service' && 'ACCOUNT_SERVICE_ECR' || matrix.service == 'auth-service' && 'AUTH_SERVICE_ECR' || 'TRANSACTION_SERVICE_ECR'] }}"
-        docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+      - name: Build and Push Docker image
+        env: 
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd ${{ matrix.service }}
+          ECR_REPO="${{ env[matrix.service == 'account-service' && 'ACCOUNT_SERVICE_ECR' || matrix.service == 'auth-service' && 'AUTH_SERVICE_ECR' || 'TRANSACTION_SERVICE_ECR'] }}"
+          docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
 
   deploy:
     needs: build-and-test 

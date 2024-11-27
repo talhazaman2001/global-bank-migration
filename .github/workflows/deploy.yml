@@ -34,7 +34,7 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-          cd ${{matrix.service}}
+          cd banking-services/${{matrix.service}}
           docker build -t ${{matrix.service}}:test .
 
       - name: Build and Push Docker image

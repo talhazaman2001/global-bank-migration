@@ -23,7 +23,6 @@ jobs:
         service: [account-service, auth-service, transaction-service]
     steps:
       - uses: actions/checkout@v3
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -33,7 +32,7 @@ jobs:
       - name: Login to Amazon ECR
         run: |
           cd ${{matrix.service}}
-          docker build -t ${{matrix.service}}: test .
+          docker build -t ${{matrix.service}}:test .
 
       - name: Build and Push Docker image
         env: 

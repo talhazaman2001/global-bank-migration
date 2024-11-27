@@ -42,8 +42,8 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           ECR_REPO="${{ env[matrix.service == 'account-service' && 'ACCOUNT_SERVICE_ECR' || matrix.service == 'auth-service' && 'AUTH_SERVICE_ECR' || 'TRANSACTION_SERVICE_ECR'] }}"
-          docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG -f banking-services/${{ matrix.service }}/Dockerfile banking-services/
-          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+          docker build -t $ECR_REPO:$IMAGE_TAG -f banking-services/${{ matrix.service }}/Dockerfile banking-services/
+          docker push $ECR_REPO:$IMAGE_TAG
 
   deploy:
     needs: build-and-test 
@@ -93,7 +93,7 @@ jobs:
               # Delete old blue deployment
               kubectl delete deployment ${service}-blue -n banking --ignore-not-found
               # Rename green to blue 
-              kubectl patch deploymeny ${service}-green -n banking -p \
+              kubectl patch deployment ${service}-green -n banking -p \
                 "{\"metadata\":{\"name\":\"${service}\"},\"spec\":{\"template\":{\"metadata\"{\"labels\":{\"app\":\"${service}\"}}}}}"
             
             else

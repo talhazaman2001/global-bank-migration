@@ -4,3 +4,4 @@ pylint
 mypy
 black
 isort
+moto

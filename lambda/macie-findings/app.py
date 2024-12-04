@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 from datetime import datetime
 from typing import Dict, Any
 
@@ -73,7 +74,7 @@ def lambda_handler(event: Dict[str, Any]) -> Dict[str, Any]:
             """
             
             sns.publish(
-                TopicArn='YOUR_SNS_TOPIC_ARN',
+                TopicArn=os.environ.get('SNS_TOPIC_ARN', 'YOUR_SNS_TOPIC_ARN'),
                 Subject='Macie Alert: Sensitive Data Exposure',
                 Message=alert_message
             )

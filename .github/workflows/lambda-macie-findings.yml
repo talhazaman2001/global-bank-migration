@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements/requirements.txt
-          pip install boto3 black isort mypy pylint pytest pytest-cov
+          pip install boto3 black isort mypy pylint pytest pytest-cov moto
       - name: Run code formatting checks
         run: |
           black lambda/macie-findings/

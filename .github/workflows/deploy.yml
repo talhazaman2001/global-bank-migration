@@ -3,8 +3,15 @@ name: Banking Services CI/CD
 on: 
   push:
     branches: [main]
+    paths: 
+      - 'kubernetes/**'
+      - 'banking-services/**'
+      - '.github/workflows/deploy.yml'
   pull_request:
     branches: [main]
+    paths: 
+      - 'kubernetes/**'
+      - 'banking-services/**'
 
 env:
   AWS_REGION: eu-west-2

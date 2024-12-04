@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths: 
       - 'lambda/macie-findings/**'
+      - 'lambda/macie-findings/app/py'
       - '.github/workflows/lambda-macie-findings.yml'
   pull_request:
     branches: [main]
     paths:
       - 'lambda/macie-findings/**'
+      - 'lambda/macie-findings/app.py'
 
 env: 
   AWS_REGION: eu-west-2 

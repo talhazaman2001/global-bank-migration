@@ -90,6 +90,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
           aws-region: eu-west-2
       - name: Update Lambda Function
         run: |
@@ -112,6 +113,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
           aws-region: eu-west-2
       - name: Update Lambda Function
         id: get_url

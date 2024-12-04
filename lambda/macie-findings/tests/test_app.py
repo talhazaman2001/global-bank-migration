@@ -1,5 +1,6 @@
 from moto import mock_aws
 from app import lambda_handler
+from unittest.mock import patch
 import json
 import os
 import sys
@@ -27,30 +28,32 @@ def test_lambda_handler_success():
         CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'}
     )
     
-    # Set up mock Security Hub
-    security_hub.enable_security_hub()
-    
-    # Mock event data
-    event = {
-        'detail': {
-            'id': 'test-finding',
-            'region': 'eu-west-2',
-            'accountId': '123456789012',
-            'resourcesAffected': {
-                's3Bucket': {'name': 'test-bucket'},
-                's3Object': {'key': 'test-object'}
-            },
-            'severity': {'description': 'HIGH'},
-            'description': 'Unencrypted data found'
+    # Mock Security Hub batch_import_findings call
+    with patch('boto3.client') as mock_boto3:
+        mock_security_hub = mock_boto3.return_value
+        mock_security_hub.batch_import_findings.return_value = {'SuccessCount': 1, 'FailedCount': 0}
+        
+        # Mock event data
+        event = {
+            'detail': {
+                'id': 'test-finding',
+                'region': 'eu-west-2',
+                'accountId': '123456789012',
+                'resourcesAffected': {
+                    's3Bucket': {'name': 'test-bucket'},
+                    's3Object': {'key': 'test-object'}
+                },
+                'severity': {'description': 'HIGH'},
+                'description': 'Unencrypted data found'
+            }
         }
-    }
-    
-    # Call handler
-    response = lambda_handler(event)
-    
-    # Assert response structure
-    assert response['statusCode'] == 200
-    assert json.loads(response['body']) == 'Successfully processed Macie finding'
+        
+        # Call handler
+        response = lambda_handler(event)
+        
+        # Assert response structure
+        assert response['statusCode'] == 200
+        assert json.loads(response['body']) == 'Successfully processed Macie finding'
 
 @mock_aws
 def test_lambda_handler_invalid_event():

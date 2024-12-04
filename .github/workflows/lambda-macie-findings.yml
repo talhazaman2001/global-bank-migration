@@ -44,7 +44,7 @@ jobs:
           pylint lambda/macie-findings/ --disable=C0111,C0103
       - name: Run tests with coverage
         run: |
-          pytest lambda/macie-findings/ --cov=lambda/macie-findings/ --cov-report=xml
+          PYTHONPATH=$PYTHONPATH:lambda/macie-findings/ pytest --cov=lambda/macie-findings/ --cov-report=xml
       - name: Upload coverage report
         uses: codecov/codecov-action@v3
         with:

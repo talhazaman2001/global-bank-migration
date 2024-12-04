@@ -1,6 +1,12 @@
 import json
 import pytest
 from app import lambda_handler
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import lambda_handler
 
 def test_lambda_handler_success():
     # Mock event data

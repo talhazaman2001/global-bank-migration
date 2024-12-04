@@ -16,7 +16,6 @@ def test_lambda_handler_success():
     # Set up mock AWS services
     sns = boto3.client('sns')
     s3 = boto3.client('s3')
-    security_hub = boto3.client('securityhub')
     
     # Create mock SNS topic
     topic = sns.create_topic(Name='test-topic')

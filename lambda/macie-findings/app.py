@@ -3,12 +3,12 @@ import boto3
 from datetime import datetime
 from typing import Dict, Any
 
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # noqa: W0613
+def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pylint: disable=unused-argument
     """
     Handles Macie findings and initiates remediation.
     Triggered by EventBridge when Macie creates a finding.
     """
-    # Initialize AWS clients
+    # Initialise AWS clients
     s3 = boto3.client('s3')
     sns = boto3.client('sns')
     security_hub = boto3.client('securityhub')

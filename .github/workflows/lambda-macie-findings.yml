@@ -70,15 +70,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install boto3
           pip install -r requirements/requirements.txt
-      - name: Create deployment package
-        run: |
-          cd lambda/macie-findings/
-          zip -r ../macie-findings.zip .
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
+        uses: actions/upload-artifact@v3 
+        with: 
           name: lambda-package
-          path: macie-findings.zip
+          path: lambda/macie-findings/macie-findings.zip
 
   deploy-staging:
     runs-on: ubuntu-latest

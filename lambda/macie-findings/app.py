@@ -3,7 +3,7 @@ import boto3
 from datetime import datetime
 from typing import Dict, Any
 
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:  # pylint: disable=unused-argument
+def lambda_handler(event: Dict[str, Any]) -> Dict[str, Any]:  
     """
     Handles Macie findings and initiates remediation.
     Triggered by EventBridge when Macie creates a finding.

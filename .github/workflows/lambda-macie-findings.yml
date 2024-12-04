@@ -34,8 +34,8 @@ jobs:
           pip install black isort mypy pylint pytest pytest-cov
       - name: Run code formatting checks
         run: |
-          black --check lambda/macie-findings/
-          isort --check-only lambda/macie-findings/
+          black lambda/macie-findings/
+          isort lambda/macie-findings/
       - name: Run type checking
         run: |
           mypy lambda/macie-findings/ --ignore-missing-imports

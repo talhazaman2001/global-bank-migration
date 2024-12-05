@@ -80,29 +80,7 @@ jobs:
           name: lambda-package
           path: lambda/macie-findings/macie-findings.zip
 
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: staging
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: lambda-package
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
-          role-session-name: GitHubActionsSession
-          aws-region: eu-west-2
-      - name: Update Lambda Function
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{env.LAMBDA_FUNCTION_NAME}}-staging \
-            --zip-file fileb://macie-findings.zip
-
-  deploy-production:
+  deploy:
     runs-on: ubuntu-latest
     needs: deploy-staging
     if: github.ref == 'refs/heads/main'
@@ -123,6 +101,6 @@ jobs:
         id: get_url
         run: |
           aws lambda update-function-code \
-            --function-name ${{env.LAMBDA_FUNCTION_NAME}}-prod \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}} \
             --zip-file fileb://macie-findings.zip
           echo "::set-output name=url::https://${{env.AWS_REGION}}.console.aws.amazon.com/lambda/home?region=${{env.AWS_REGION}}#/functions/${{env.LAMBDA_FUNCTION_NAME}}-prod"

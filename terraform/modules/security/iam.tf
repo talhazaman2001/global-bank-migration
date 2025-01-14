@@ -751,4 +751,8 @@ resource "aws_iam_role_policy_attachment" "github_actions_lambda" {
     policy_arn = "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "github_actions_secrets" {
+    role       = aws_iam_role.github_actions.name
+    policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+}
 

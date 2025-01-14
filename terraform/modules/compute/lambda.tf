@@ -56,24 +56,18 @@ resource "aws_lambda_function" "macie_findings" {
     }
 }
 
-# Lambda Function for Config Rule Changes
-resource "aws_lambda_function" "config_rules" {
-    filename = "${path.module}/../../../lambda/config-rule-changes/config-rule-changes.zip" 
-    function_name = "config-rule-changes"
+# Lambda Function BLUE for Config Rule Changes
+resource "aws_lambda_function" "config_rules_blue" {
+    filename = local.lambda_config.filename
+    function_name = "config-rule-changes-blue"
     role = var.lambda_role_arn
-    handler = "app.lambda_handler"
-    runtime = "python3.12"
-    timeout = 30
-    memory_size = 256
+    handler = local.lambda_config.handler
+    runtime = local.lambda_config.runtime
+    timeout = local.lambda_config.timeout
+    memory_size = local.lambda_config.memory_size
 
     environment {
-        variables = {
-            APPROVED_PORTS = "80,443,22"
-            VPC_ID = var.production_vpc_id
-            SNS_TOPIC_ARN = var.sns_topic_arn  
-            ENVIRONMENT = "production"
-            SECURITY_GROUP_IDS = join(",", [var.eks_security_group_id, aws_security_group.alb.id])  # Critical SGs to monitor
-        }
+        variables = local.lambda_config.environment.variables
     }
 
     vpc_config {
@@ -81,6 +75,34 @@ resource "aws_lambda_function" "config_rules" {
         security_group_ids = [aws_security_group.lambda.id]
     }
 }
+
+# Lambda Function GREEN for Config Rule Changes
+resource "aws_lambda_function" "config_rules_green" {
+    filename = local.lambda_config.filename
+    function_name = "config-rule-changes-green"
+    role = var.lambda_role_arn
+    handler = local.lambda_config.handler
+    runtime = local.lambda_config.runtime
+    timeout = local.lambda_config.timeout
+    memory_size = local.lambda_config.memory_size
+
+    environment {
+        variables = local.lambda_config.environment.variables
+    }
+
+    vpc_config {
+        subnet_ids = var.production_public_subnet_ids
+        security_group_ids = [aws_security_group.lambda.id]
+    }
+}
+
+# Lambda Production Alias
+resource "aws_lambda_alias" "prod" {
+    name = "prod"
+    function_name = aws_lambda_function.config_rules_blue.function_name
+    function_version = aws_lambda_function.config_rules_blue.version
+}
+
 
 # Lambda Permission to allow EventBridge invocation
 resource "aws_lambda_permission" "allow_eventbridge" {
@@ -90,9 +112,9 @@ resource "aws_lambda_permission" "allow_eventbridge" {
     }
 
     statement_id  = "AllowEventBridgeInvoke${each.key}"
-    action        = "lambda:InvokeFunction"
-    function_name = each.key == "config" ? aws_lambda_function.config_rules.function_name : aws_lambda_function.macie_findings.function_name
-    principal     = "events.amazonaws.com"
-    source_arn    = each.value
+    action = "lambda:InvokeFunction"
+    function_name = aws_lambda_alias.prod.function_name
+    principal = "events.amazonaws.com"
+    source_arn = each.value
 }
 

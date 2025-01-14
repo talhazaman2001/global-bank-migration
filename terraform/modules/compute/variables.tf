@@ -112,3 +112,27 @@ variable "eks_service_account_role_arn" {
 variable "cloudwatch_event_rule_config_changes_arn" {
     type = string
 }
+
+locals {
+    lambda_config = {
+        filename        = "${path.module}/../../../lambda/config-rule-changes/config-rule-changes.zip"
+        role            = var.lambda_role_arn
+        handler         = "app.lambda_handler"
+        runtime         = "python3.12"
+        timeout         = 30
+        memory_size     = 256
+        environment     = {
+            variables = {
+                APPROVED_PORTS     = "80,443,22"
+                VPC_ID             = var.production_vpc_id
+                SNS_TOPIC_ARN      = var.sns_topic_arn
+                ENVIRONMENT        = "production"
+                SECURITY_GROUP_IDS = join(",", [var.eks_security_group_id, aws_security_group.alb.id])
+            }
+        }
+        vpc_config = {
+            subnet_ids         = var.production_public_subnet_ids
+            security_group_ids = [aws_security_group.lambda.id]
+        }
+    }
+}

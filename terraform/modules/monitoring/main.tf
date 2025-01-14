@@ -267,7 +267,7 @@ resource "aws_cloudwatch_event_target" "macie_lambda" {
     arn = var.macie_findings_arn
 }
 
-# EventBridge Rule for Macie Findings
+# EventBridge Rule for Config
 resource "aws_cloudwatch_event_rule" "config_rules" {
     name        = "config-rule-changees"
     description = "Capture Config Rule Security Group Changes"
@@ -289,5 +289,5 @@ resource "aws_cloudwatch_event_rule" "config_rules" {
 resource "aws_cloudwatch_event_target" "config_lambda" {
     rule = aws_cloudwatch_event_rule.config_rules.name
     target_id = "ConfigRulesLambda"
-    arn = var.config_rules_arn
+    arn = var.lambda_alias_prod_arn
 }

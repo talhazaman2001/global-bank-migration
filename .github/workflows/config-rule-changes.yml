@@ -1,0 +1,265 @@
+name: Config Rule Changes CI/CD Pipeline
+
+on:
+  push: 
+    branches: [main]
+    paths: 
+      - 'lambda/config-rule-changes/**'
+      - 'lambda/config-rule-changes/app.py'
+      - '.github/workflows/config-rule-changes.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lambda/config-rule-changes/**'
+      - 'lambda/config-rule-changes/app.py'
+
+env: 
+  AWS_REGION: eu-west-2 
+  LAMBDA_FUNCTION_NAME: config-rule-changes 
+  PYTHON_VERSION: '3.12'
+  SECRETS_ARN: 'arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets'
+  ERROR_THRESHOLD: 1.0
+
+permissions:
+  id-token: write
+  contents: read 
+
+jobs: 
+  fetch-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      servicenow_config: ${{steps.get-secrets.outputs.servicenow_config}}
+    steps:
+      - name: Configure AWS Credentials 
+        uses: aws-actions/configure-aws-credentials@v2
+        with: 
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Retrieve Secrets 
+        id: get-secrets 
+        run: |
+          SECRETS=$(aws secretsmanager get-secret-value --secret-id ${{env.SECRETS_ARN}} --query SecretString --output text)
+          echo "servicenow_config=$(echo $SECRETS | jq -r .servicenow)" >> $GITHUB_OUTPUT
+
+  security-compliance: 
+    needs: fetch-secrets
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3 
+
+      - name: Configure AWS Credentials 
+        uses: aws-actions/configure-aws-credentials@v2 
+        with: 
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Run Bandit Security Scanner 
+        run: |
+          pip install bandit 
+          bandit -r lambda/config-rule-changes/app.py -f json -o bandit-report.json --exit-zero
+
+      - name: Run Checkov 
+        uses: bridgecrewio/checkov-action@master
+        with: 
+          directory: lambda/config-rule-changes/
+          framework: all
+
+      - name: Run Trufflehog
+        uses: trufflesecurity/trufflehog@main 
+        with: 
+          path: ./ 
+          base: ${{github.event.repository.default_branch}}
+          head: HEAD 
+
+  quality_checks:
+    runs-on: ubuntu-latest
+    needs: security-compliance
+    steps: 
+      - uses: actions/checkout@v3 
+      - name: Set up Python 
+        uses: actions/setup-python@v4 
+        with: 
+          python-version: ${{env.PYTHON_VERSION}}
+      - name: Install dependencies 
+        run: | 
+          python -m pip install --upgrade pip 
+          pip install -r requirements/requirements.txt
+          pip install boto3 black isort mypy pylint pytest-cov moto
+      - name: Run code formatting checks 
+        run: |
+          black lambda/config-rule-changes/ 
+          isort lambda/config-rule-changes/ 
+      - name: Run type checking 
+        run: | 
+          mypy lambda/config-rule-changes/ --ignore-missing-imports
+      - name: Run linting 
+        run: | 
+          pylint lambda/config-rule-changes/ --disable=C0111,C0103
+      - name: Run tests with coverage 
+        run: |
+          PYTHONPATH=$PYTHONPATH:lambda/config-rule-changes/ pytest --cov=lambda/config-rule-changes/
+
+  create-change-ticket: 
+    runs-on: ubuntu-latest
+    needs: [quality_checks, fetch-secrets]
+    steps: 
+      - name: Parse ServiceNow Config 
+        run: | 
+          SERVICENOW_CONFIG='${{ needs.fetch-secrets.outputs.servicenow_config }}'
+          echo "SN_INSTANCE=$(echo $SERVICENOW_CONFIG | jq -r .instance_url)" >> $GITHUB_ENV
+          echo "SN_USERNAME=$(echo $SERVICENOW_CONFIG | jq -r .username)" >> $GITHUB_ENV
+          echo "SN_PASSWORD=$(echo $SERVICENOW_CONFIG | jq -r .password)" >> $GITHUB_ENV
+      
+      - name: Create ServiceNow Change Request 
+        uses: ServiceNow/servicenow-devops-change@v1 
+        with: 
+          instance-url: ${{env.SN_INSTANCE}}
+          username: ${{env.SN_USERNAME}}
+          password: ${{env.SN_PASSWORD}}
+          context-github: ${{toJSON(github)}}
+          change-request: 
+            type: normal
+            description: "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}"
+  
+  build: 
+    runs-on: ubuntu-latest
+    needs: create-change-ticket
+    permissions:
+      id-token: write
+      contents: read  
+    steps: 
+      - uses: actions/checkout@v3
+      - name: Set up Python 
+        uses: actions/setup-python@v4 
+        with: 
+          python-version: ${{env.PYTHON_VERSION}}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip 
+          pip install boto3 
+          pip install -r requirements/requirements.txt
+      - name: Upload artifact 
+        uses: actions/upload-artifact@v3 
+        with: 
+          name: lambda-package 
+          path: lambda/config-rule-changes/config-rule-changes.zip
+
+  deploy-blue:
+    runs-on: ubuntu-latest
+    needs: build 
+    permissions:
+      id-token: write
+      contents: read
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production 
+    steps: 
+      - uses: actions/download-artifact@v3 
+        with: 
+          name: lambda-package
+
+      - name: Configure AWS credentials 
+        uses: aws-actions/configure-aws-credentials@v2 
+        with:
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Deploy to Blue Environment 
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}}-blue \
+            --zip-file fileb://config-rule-changes.zip
+          
+          aws lambda wait function-updated \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}}-blue 
+
+  health-check: 
+    runs-on: ubuntu-latest
+    needs: deploy-blue
+    permissions:
+      id-token: write
+      contents: read
+    steps: 
+      - name: Configure AWS Credentials 
+        uses: aws-actions/configure-aws-credentials@v2 
+        with: 
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Monitor Deployment Health 
+        run: |
+          ERROR_RATE=$(aws cloudwatch get-metric-statistics \
+            --namespace AWS/Lambda \
+            --metric-name Errors \
+            --dimensions Name=FunctionName,Value=${{env.LAMBDA_FUNCTION_NAME}}-blue \
+            --start-time $(date -u -v-5M +"%Y-%m-%dT%H:%M:%SZ") \
+            --end-time $(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+            --period 300 \
+            --statistics Average \
+            --query 'Datapoints[0].Average' \
+            --output text)
+          
+          if (( $(echo "$ERROR_RATE > $ERROR_THRESHOLD" | bc -l) )); then
+            echo "Error rate threshold exceeded: $ERROR_RATE"
+            exit 1
+          fi
+
+  switch-traffic: 
+    runs-on: ubuntu-latest
+    needs: health-check
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: lambda-package
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Switch Production Alias
+        run: |
+          BLUE_VERSION=$(aws lambda get-function --function-name ${{env.LAMBDA_FUNCTION_NAME}}-blue --query 'Configuration.Version' --output text)
+          
+          aws lambda update-alias \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}} \
+            --name prod \
+            --function-version $BLUE_VERSION
+          
+          aws lambda update-function-code \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}}-green \
+            --zip-file fileb://config-rule-changes.zip
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [switch-traffic, health-check]
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::463470963000:role/github-actions-role
+          role-session-name: GitHubActionsSession
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Rollback to Green
+        run: |
+          GREEN_VERSION=$(aws lambda get-function --function-name ${{env.LAMBDA_FUNCTION_NAME}}-green --query 'Configuration.Version' --output text)
+          
+          aws lambda update-alias \
+            --function-name ${{env.LAMBDA_FUNCTION_NAME}} \
+            --name prod \
+            --function-version $GREEN_VERSION

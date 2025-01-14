@@ -8,7 +8,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
    Reverts unauthorised changes and notifies security team.
    """
    
-   # Initialize AWS clients
+   # Initialise AWS clients
    ec2 = boto3.client('ec2')
    sns = boto3.client('sns')
 
@@ -39,7 +39,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                unauthorised_rules.append(rule)
 
        if unauthorised_rules:
-           # Revert unauthorized changes
+           # Revert unauthorised changes
            ec2.revoke_security_group_ingress(
                GroupId=sg_id,
                IpPermissions=unauthorised_rules

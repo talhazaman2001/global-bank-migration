@@ -179,3 +179,19 @@ data "aws_iam_policy_document" "application_key_policy" {
         resources = ["*"]
     }
 }   
+
+resource "aws_secretsmanager_secret" "pipeline_secrets" {
+    name = "pipeline-secrets"
+    kms_key_id = aws_kms_key.database.id
+}
+
+resource "aws_secretsmanager_secret_version" "pipeline_secrets" {
+    secret_id = aws_secretsmanager_secret.pipeline_secrets.id
+    secret_string = jsonencode({
+            servicenow = {
+                instance_url = var.servicenow_url
+                username     = var.servicenow_username
+                password     = var.servicenow_password
+            }
+    })
+}

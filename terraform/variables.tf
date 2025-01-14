@@ -81,3 +81,20 @@ locals {
         "audit-reports-talha"
     ]
 }
+
+variable "servicenow_url" {
+    description = "ServiceNow instance URL"
+    type        = string
+}
+
+variable "servicenow_username" {
+    description = "ServiceNow username"
+    type        = string
+    sensitive   = true
+}
+
+variable "servicenow_password" {
+    description = "ServiceNow password"
+    type        = string
+    sensitive   = true
+}

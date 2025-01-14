@@ -52,7 +52,7 @@ variable "macie_findings_arn" {
     description = "Lambda Function ARN for Macie Findings"
 }
 
-variable "config_rules_arn" {
+variable "lambda_alias_prod_arn" {
     type = string
-    description = "Lambda Function ARN for Config Rule Changes"
+    description = "Alias of Production Lambda"
 }

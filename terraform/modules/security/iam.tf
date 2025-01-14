@@ -751,8 +751,24 @@ resource "aws_iam_role_policy_attachment" "github_actions_lambda" {
     policy_arn = "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
 }
 
-resource "aws_iam_role_policy_attachment" "github_actions_secrets" {
-    role       = aws_iam_role.github_actions.name
-    policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
-}
+# GitHub Actions Role for Secrets Manager Access
+resource "aws_iam_role_policy" "github_actions_secret_access" {
+    name = "github-actions-secret-access"
+    role = aws_iam_role.github_actions.id
 
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret"
+                ]
+                Resource = [
+                    "arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets"
+                ]
+            }
+        ]
+    })
+}

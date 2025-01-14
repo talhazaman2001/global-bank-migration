@@ -337,18 +337,3 @@ resource "aws_macie2_classification_job" "s3_sensitive_data" {
     })
 }
 
-# Secrets Manager for Config Pipeline Secrets
-resource "aws_secretsmanager_secret" "pipeline_secrets" {
-    name = "config-pipeline-secrets"
-}
-
-resource "aws_secretsmanager_secret_version" "pipeline_secrets" {
-    secret_id = aws_secretsmanager_secret.pipeline_secrets.id
-    secret_string = jsonencode({
-        servicenow = {
-            instance_url = var.servicenow_url
-            username = var.servicenow_username
-            password = var.servicenow_password 
-        }
-    })
-}

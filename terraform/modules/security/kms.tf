@@ -180,6 +180,7 @@ data "aws_iam_policy_document" "application_key_policy" {
     }
 }   
 
+# Secrets Manager for Config Pipeline Secrets
 resource "aws_secretsmanager_secret" "pipeline_secrets" {
     name = "pipeline-secrets"
     kms_key_id = aws_kms_key.database.id

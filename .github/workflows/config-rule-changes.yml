@@ -120,9 +120,8 @@ jobs:
           username: ${{env.SN_USERNAME}}
           password: ${{env.SN_PASSWORD}}
           context-github: ${{toJSON(github)}}
-          change-request: 
-            type: normal
-            description: "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}"
+          change-request-type: "normal"
+          description: "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}"
   
   build: 
     runs-on: ubuntu-latest

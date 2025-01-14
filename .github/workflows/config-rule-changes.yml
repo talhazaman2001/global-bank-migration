@@ -17,7 +17,7 @@ env:
   AWS_REGION: eu-west-2 
   LAMBDA_FUNCTION_NAME: config-rule-changes 
   PYTHON_VERSION: '3.12'
-  SECRETS_ARN: 'arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets'
+  SECRETS_ARN: 'arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets-2YBThz'
   ERROR_THRESHOLD: 1.0
 
 permissions:

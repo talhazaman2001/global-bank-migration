@@ -766,7 +766,7 @@ resource "aws_iam_role_policy" "github_actions_secret_access" {
                     "secretsmanager:DescribeSecret"
                 ]
                 Resource = [
-                    "arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets"
+                    "arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets-2YBThz"
                 ]
             }
         ]

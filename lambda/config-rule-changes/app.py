@@ -2,7 +2,7 @@ import json
 import boto3
 from typing import Dict, Any
 
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def lambda_handler(event: Dict[str, Any], _: Any) -> Dict[str, Any]:
    """
    Handles AWS Config changes to security groups.
    Reverts unauthorised changes and notifies security team.
@@ -16,7 +16,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
        # Parse Config change event
        config_item = event['detail']['configurationItem']
        sg_id = config_item['resourceId']
-       changes = config_item['changes']
 
        APPROVED_PORTS = {443, 80, 22}  
        

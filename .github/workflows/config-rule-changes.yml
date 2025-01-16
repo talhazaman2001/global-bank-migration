@@ -112,15 +112,24 @@ jobs:
           echo "SN_USERNAME=$(echo $SERVICENOW_CONFIG | jq -r .username)" >> $GITHUB_ENV
           echo "SN_PASSWORD=$(echo $SERVICENOW_CONFIG | jq -r .password)" >> $GITHUB_ENV
       
-      - name: Create ServiceNow Change Request 
-        uses: actions/servicenow-devops-change-action@v1 
-        with: 
-          instance-url: ${{env.SN_INSTANCE}}
-          username: ${{env.SN_USERNAME}}
-          password: ${{env.SN_PASSWORD}}
-          context-github: ${{toJSON(github)}}
-          change-request-type: "normal"
-          description: "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}"
+      - name: Create ServiceNow Change Request
+        run: |
+          curl --request POST \
+            --url "${{env.SN_INSTANCE}}/api/now/table/change_request" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --user "${{env.SN_USERNAME}}:${{env.SN_PASSWORD}}" \
+            --data '{
+              "type": "normal",
+              "short_description": "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}",
+              "description": "Automated deployment from GitHub Actions",
+              "category": "Other",
+              "risk": "3",
+              "priority": "3",
+              "change_plan": "GitHub Actions deployment of Lambda function updates",
+              "justification": "Automated deployment through CI/CD pipeline",
+              "state": "1"
+            }'
   
   build: 
     runs-on: ubuntu-latest

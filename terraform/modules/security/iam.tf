@@ -305,6 +305,37 @@ resource "aws_iam_role_policy_attachment" "lambda_config" {
     policy_arn = aws_iam_policy.lambda_config.arn
 }
 
+# IAM Policy for Lambda KMS and Secrets
+resource "aws_iam_policy" "lambda_secrets" {
+    name = "lambda-secrets-policy"
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret"
+                ]
+                    Resource = ["arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets-2YBThz"]
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "kms:Decrypt",
+                    "kms:DescribeKey"
+                ]
+                Resource = [aws_kms_key.database.arn]
+            }
+        ]
+    })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_secrets" {
+    role       = aws_iam_role.lambda.name
+    policy_arn = aws_iam_policy.lambda_secrets.arn
+}
+
 # EKS Cluster Role
 resource "aws_iam_role" "eks_cluster" {
     name = "eks-cluster-role"
@@ -751,9 +782,9 @@ resource "aws_iam_role_policy_attachment" "github_actions_lambda" {
     policy_arn = "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
 }
 
-# GitHub Actions Role for Secrets Manager Access
-resource "aws_iam_role_policy" "github_actions_secret_access" {
-    name = "github-actions-secret-access"
+# GitHub Actions Policy for Secrets Manager Access
+resource "aws_iam_role_policy" "github_actions_secrets_access" {
+    name = "github-actions-secrets-access"
     role = aws_iam_role.github_actions.id
 
     policy = jsonencode({
@@ -766,7 +797,18 @@ resource "aws_iam_role_policy" "github_actions_secret_access" {
                     "secretsmanager:DescribeSecret"
                 ]
                 Resource = [
-                    "arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets-2YBThz"
+                    "arn:aws:secretsmanager:eu-west-2:463470963000:secret:pipeline-secrets*"
+                ]
+            },
+            {
+                Effect = "Allow"
+                Action = [
+                    "kms:Decrypt",
+                    "kms:DescribeKey",
+                    "kms:GenerateDataKey"
+                ]
+                Resource = [
+                    aws_kms_key.database.arn
                 ]
             }
         ]

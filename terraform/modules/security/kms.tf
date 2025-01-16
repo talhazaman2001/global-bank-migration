@@ -142,6 +142,22 @@ data "aws_iam_policy_document" "database_key_policy" {
         actions = ["kms:*"]
         resources = ["*"]
     }
+
+    statement {
+        sid    = "Allow GitHub Actions"
+        effect = "Allow"
+        principals {
+            type = "AWS"
+            identifiers = [aws_iam_role.github_actions.arn]
+        }
+        actions = [
+            "kms:Decrypt",
+            "kms:GenerateDataKey*",
+            "kms:DescribeKey"
+        ]
+        resources = ["*"]
+    }
+
 }
 
 # Application Key Policy
@@ -189,10 +205,10 @@ resource "aws_secretsmanager_secret" "pipeline_secrets" {
 resource "aws_secretsmanager_secret_version" "pipeline_secrets" {
     secret_id = aws_secretsmanager_secret.pipeline_secrets.id
     secret_string = jsonencode({
-            servicenow = {
-                instance_url = var.servicenow_url
-                username     = var.servicenow_username
-                password     = var.servicenow_password
-            }
+        servicenow = {
+            instance_url = var.servicenow_url,
+            username     = var.servicenow_username,
+            password     = var.servicenow_password
+        }
     })
 }

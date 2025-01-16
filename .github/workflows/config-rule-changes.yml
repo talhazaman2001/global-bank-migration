@@ -40,8 +40,8 @@ jobs:
       - name: Retrieve Secrets 
         id: get-secrets 
         run: |
-          SECRETS=$(aws secretsmanager get-secret-value --secret-id ${{env.SECRETS_ARN}} --query SecretString --output text)
-          echo "servicenow_config=$(echo $SECRETS | jq -r .servicenow)" >> $GITHUB_OUTPUT
+          SECRETS=$(aws secretsmanager get-secret-value --secret-id ${{env.SECRETS_ARN}} --query 'SecretString' --output text)
+          echo "servicenow_config=$(echo $SECRETS | jq -c '.servicenow')" >> $GITHUB_OUTPUT
 
   security-compliance: 
     needs: fetch-secrets

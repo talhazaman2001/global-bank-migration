@@ -113,7 +113,7 @@ jobs:
           echo "SN_PASSWORD=$(echo $SERVICENOW_CONFIG | jq -r .password)" >> $GITHUB_ENV
       
       - name: Create ServiceNow Change Request 
-        uses: ServiceNow/servicenow-devops-change@v1 
+        uses: ServiceNow/servicenow-devops-change-action@v1 
         with: 
           instance-url: ${{env.SN_INSTANCE}}
           username: ${{env.SN_USERNAME}}

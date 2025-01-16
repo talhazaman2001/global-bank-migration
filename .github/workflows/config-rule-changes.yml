@@ -149,7 +149,7 @@ jobs:
           pip install boto3 
           pip install -r requirements/requirements.txt
       - name: Upload artifact 
-        uses: actions/upload-artifact@v3 
+        uses: actions/upload-artifact@v4
         with: 
           name: lambda-package 
           path: lambda/config-rule-changes/config-rule-changes.zip
@@ -164,7 +164,7 @@ jobs:
     environment:
       name: production 
     steps: 
-      - uses: actions/download-artifact@v3 
+      - uses: actions/download-artifact@v4
         with: 
           name: lambda-package
 
@@ -223,7 +223,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: lambda-package
 

@@ -17,3 +17,7 @@ output "cloudwatch_event_rule_macie_findings_arn" {
 output "cloudwatch_event_rule_config_changes_arn" {
     value = aws_cloudwatch_event_rule.config_rules.arn
 }
+
+output "lambda_log_group_arn" {
+    value = aws_cloudwatch_log_group.Lambda.arn
+}

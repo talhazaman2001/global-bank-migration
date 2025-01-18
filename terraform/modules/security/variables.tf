@@ -140,3 +140,7 @@ variable "servicenow_password" {
     sensitive   = true
 }
 
+variable "lambda_log_group_arn" {
+    description = "lambda log group ARN"
+    type = string
+}

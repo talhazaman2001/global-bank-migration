@@ -141,6 +141,7 @@ module "security" {
     servicenow_url = var.servicenow_url
     servicenow_username = var.servicenow_username
     servicenow_password = var.servicenow_password
+    lambda_log_group_arn = module.monitoring.lambda_log_group_arn
 }
 
 # Storage Module

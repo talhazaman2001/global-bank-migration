@@ -814,3 +814,24 @@ resource "aws_iam_role_policy" "github_actions_secrets_access" {
         ]
     })
 }
+
+# GitHub Actions Policy for CloudWatch Health Metrics Lambda
+resource "aws_iam_role_policy" "github_actions_cloudwatch" {
+    name = "github-actions-cloudwatch"
+    role = aws_iam_role.github_actions.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Effect = "Allow"
+                Action = [
+                    "cloudwatch:GetMetricsStatistics",
+                ]
+                Resource = [
+                    var.lambda_log_group_arn
+                ]
+            }
+        ]
+    })
+}

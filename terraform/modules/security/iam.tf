@@ -826,11 +826,11 @@ resource "aws_iam_role_policy" "github_actions_cloudwatch" {
             {
                 Effect = "Allow"
                 Action = [
-                    "cloudwatch:GetMetricsStatistics",
+                    "cloudwatch:GetMetricStatistics",
+                    "cloudwatch:ListMetrics",
+                    "cloudwatch:DescribeAlarms"
                 ]
-                Resource = [
-                    var.lambda_log_group_arn
-                ]
+                Resource = "*"
             }
         ]
     })

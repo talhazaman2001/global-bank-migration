@@ -56,6 +56,26 @@ resource "aws_lambda_function" "macie_findings" {
     }
 }
 
+# BASE Lambda Function for Config Rule Changes
+resource "aws_lambda_function" "config_rules" {
+    filename = local.lambda_config.filename
+    function_name = "config-rule-changes"
+    role = var.lambda_role_arn
+    handler = local.lambda_config.handler
+    runtime = local.lambda_config.runtime
+    timeout = local.lambda_config.timeout
+    memory_size = local.lambda_config.memory_size
+    
+    environment {
+        variables = local.lambda_config.environment.variables
+    }
+    
+    vpc_config {
+        subnet_ids = var.production_public_subnet_ids
+        security_group_ids = [aws_security_group.lambda.id]
+    }
+}
+
 # Lambda Function BLUE for Config Rule Changes
 resource "aws_lambda_function" "config_rules_blue" {
     filename = local.lambda_config.filename
@@ -99,8 +119,8 @@ resource "aws_lambda_function" "config_rules_green" {
 # Lambda Production Alias
 resource "aws_lambda_alias" "prod" {
     name = "prod"
-    function_name = aws_lambda_function.config_rules_blue.function_name
-    function_version = aws_lambda_function.config_rules_blue.version
+    function_name = aws_lambda_function.config_rules.function_name
+    function_version = aws_lambda_function.config_rules.version
 }
 
 

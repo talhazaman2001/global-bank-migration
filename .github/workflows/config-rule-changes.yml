@@ -114,22 +114,25 @@ jobs:
       
       - name: Create ServiceNow Change Request
         run: |
-          curl --request POST \
-            --url "${{env.SN_INSTANCE}}/api/now/table/change_request" \
+          RESPONSE=$(curl -s --request POST \
+            --url "dev252032.service-now.com/api/now/table/change_request" \
             --header "Accept: application/json" \
             --header "Content-Type: application/json" \
-            --user "${{env.SN_USERNAME}}:${{env.SN_PASSWORD}}" \
+            --user "admin:iu9Db0PV%g^V" \
             --data '{
               "type": "normal",
-              "short_description": "Lambda Function Update: ${{env.LAMBDA_FUNCTION_NAME}}",
+              "short_description": "Lambda Function Update: config-rule-changes",
               "description": "Automated deployment from GitHub Actions",
               "category": "Other",
               "risk": "3",
               "priority": "3",
-              "change_plan": "GitHub Actions deployment of Lambda function updates",
-              "justification": "Automated deployment through CI/CD pipeline",
               "state": "1"
-            }'
+            }')
+          echo "ServiceNow Response: $RESPONSE"
+          if [[ $? -ne 0 ]]; then
+            echo "Failed to create change request"
+            exit 1
+          fi
   
   build: 
     runs-on: ubuntu-latest

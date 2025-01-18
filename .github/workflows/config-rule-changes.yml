@@ -114,8 +114,8 @@ jobs:
       
       - name: Create ServiceNow Change Request
         run: |
-          RESPONSE=$(curl -s --request POST \
-            --url "dev252032.service-now.com/api/now/table/change_request" \
+          RESPONSE=$(curl -v --request POST \
+            --url "https://dev252032.service-now.com/api/now/table/change_request" \
             --header "Accept: application/json" \
             --header "Content-Type: application/json" \
             --user "admin:iu9Db0PV%g^V" \
@@ -127,12 +127,8 @@ jobs:
               "risk": "3",
               "priority": "3",
               "state": "1"
-            }')
+            }' 2>&1)
           echo "ServiceNow Response: $RESPONSE"
-          if [[ $? -ne 0 ]]; then
-            echo "Failed to create change request"
-            exit 1
-          fi
   
   build: 
     runs-on: ubuntu-latest
